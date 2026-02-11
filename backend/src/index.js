@@ -26,11 +26,12 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 4000;
 
-(async () => {
-  initDb();
-  await ensureRedis();
+initDb();
 
-  app.listen(PORT, () => {
-    console.log(`Backend listening on http://localhost:${PORT}`);
-  });
-})
+app.listen(PORT, () => {
+  console.log(`Backend listening on http://localhost:${PORT}`);
+});
+
+ensureRedis().catch((err) => {
+  console.error("Redis init failed:", err);
+});
