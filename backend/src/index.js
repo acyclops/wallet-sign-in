@@ -19,16 +19,18 @@ app.use(cors({
 app.use(express.json({ limit: "64kb" }));
 app.use(cookieParser());
 
-// init
-initDb();
-ensureRedis();
-
 // routes
 app.use("/auth", authRoutes); // /auth/verify, /auth/nonce, /auth/logout
 app.use("/", profileRoutes); // /me, /profile
 app.get("/health", (req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`);
-});
+
+(async () => {
+  initDb();
+  await ensureRedis();
+
+  app.listen(PORT, () => {
+    console.log(`Backend listening on http://localhost:${PORT}`);
+  });
+})
