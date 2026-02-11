@@ -4,7 +4,7 @@ This project is a full implementation of Sign-In With Ethereum (SIWE) using a Re
 
 I built this to demonstrate a production ready wallet auth flow. Not just signature verification, but proper nonce handling, session persistence, and clean frontend state management.
 
-LIVE: **https://siwe.acyclops.dev/**
+Live demo: **https://siwe.acyclops.dev/**
 
 ## Overview
 
