@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserProvider } from "ethers";
 import { buildSiweMessage } from "../lib/walletMessage";
 import { getMe, getNonce, verifySignature, logout as apiLogout } from "../api/auth";
@@ -8,10 +8,7 @@ export function useAuth() {
   const [user, setUser] = useState(null); // { address, chainId } | null
   const [error, setError] = useState("");
 
-  const hasInjected = useMemo(
-    () => typeof window !== "undefined" && !!window.ethereum,
-    []
-  );
+  const hasInjected = typeof window !== "undefined" && !!window.ethereum;
 
   useEffect(() => {
     let cancelled = false;
