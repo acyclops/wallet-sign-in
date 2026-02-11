@@ -4,6 +4,8 @@ This project is a full implementation of Sign-In With Ethereum (SIWE) using a Re
 
 I built this to demonstrate a production ready wallet auth flow. Not just signature verification, but proper nonce handling, session persistence, and clean frontend state management.
 
+LIVE: **https://siwe.acyclops.dev/**
+
 ## Overview
 
 When a user logs in, the frontend requests a nonce tied to their wallet address. The backend generates a nonce, stores it in Redis with a short TTL, and returns it to the client.
