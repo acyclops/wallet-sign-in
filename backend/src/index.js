@@ -26,7 +26,7 @@ startSessionCleanup();
 startNonceCleanup();
 
 // routes
-app.use("/auth", authRoutes);
+app.use("/auth", authRoutes); // /auth/verify, /auth/nonce, /auth/logout
 app.use("/", profileRoutes); // /me, /profile
 app.get("/health", (req, res) => res.json({ ok: true }));
 
