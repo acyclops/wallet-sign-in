@@ -14,9 +14,9 @@ function normalizeAddress(addr) {
   return addr.trim().toLowerCase();
 }
 
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
   const sid = req.cookies.sid;
-  if (sid) deleteSession(sid);
+  if (sid) await deleteSession(sid);
 
   res.clearCookie("sid", {
     sameSite: isProd ? "none" : "lax",
@@ -26,13 +26,13 @@ router.post("/logout", (req, res) => {
   return res.json({ ok: true });
 });
 
-router.get("/nonce", (req, res) => {
+router.get("/nonce", async (req, res) => {
   const address = normalizeAddress(req.query.address);
   if (!address) {
     return res.status(400).json({ ok: false, error: "Missing address" });
   }
 
-  const { nonce, expiresAt } = issueNonce(address);
+  const { nonce, expiresAt } = await issueNonce(address);
 
   return res.json({ ok: true, address, nonce, expiresAt });
 });
@@ -62,7 +62,7 @@ router.post("/verify", async (req, res) => {
         return res.status(400).json({ ok: false, error: "Invalid SIWE message: missing chainId"});
     }
 
-    const entry = getNonceEntry(address);
+    const entry = await getNonceEntry(address);
     if (!entry) {
         return res.status(400).json({ ok: false, error: "No nonce issued for this address"});
     }
@@ -81,9 +81,9 @@ router.post("/verify", async (req, res) => {
     });
 
     // Consume nonce once verifcation succeeds
-    consumeNonce(address, nonce);
+    await consumeNonce(address, nonce);
 
-    const { sid, expiresAt } = createSession({ 
+    const { sid, expiresAt } = await createSession({ 
         address: address, 
         chainId 
     });
@@ -95,6 +95,8 @@ router.post("/verify", async (req, res) => {
       maxAge: expiresAt - Date.now(),
       path: "/"
     });
+
+    console.log(sid)
 
     return res.json({ ok: true, address: address, chainId: chainId ?? null });
   } catch (err) {

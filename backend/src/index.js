@@ -3,11 +3,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import { initDb } from "./db.js";
-import { startSessionCleanup } from "./services/sessionStore.js";
-import { startNonceCleanup } from "./services/nonceStore.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
+import { ensureRedis } from "./services/redis.js";
 
 const app = express();
 
@@ -22,8 +21,7 @@ app.use(cookieParser());
 
 // init
 initDb();
-startSessionCleanup();
-startNonceCleanup();
+ensureRedis();
 
 // routes
 app.use("/auth", authRoutes); // /auth/verify, /auth/nonce, /auth/logout

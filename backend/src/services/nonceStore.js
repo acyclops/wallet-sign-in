@@ -1,45 +1,54 @@
 import crypto from "crypto";
+import { redis, ensureRedis } from "./redis.js";
 
-const nonces = new Map();
-const NONCE_TTL_MS = 5 * 60 * 1000;
+const NONCE_TTL_SECONDS = Number(process.env.NONCE_TTL_SECONDS || 300);
 
-export function issueNonce(address) {
+function nonceKey(address) {
+  return `nonce:${address}`;
+}
+
+export async function issueNonce(address) {
+  await ensureRedis();
+
   const nonce = crypto.randomBytes(16).toString("hex");
-  const expiresAt = Date.now() + NONCE_TTL_MS;
+  const key = nonceKey(address);
 
-  nonces.set(address.toLowerCase(), { nonce, expiresAt });
-  
+  await redis.set(key, nonce, { EX: NONCE_TTL_SECONDS });
+
+  const expiresAt = Date.now() + NONCE_TTL_SECONDS * 1000;
   return { nonce, expiresAt };
 }
 
-export function getNonceEntry(address) {
-  const key = address.toLowerCase();
-  const entry = nonces.get(key);
-  if (!entry) return false;
+export async function getNonceEntry(address) {
+  await ensureRedis();
 
-  return entry;
+  const key = nonceKey(address);
+  const nonce = await redis.get(key);
+  if (!nonce) return null;
+
+  const ttl = await redis.ttl(key);
+  const expiresAt = ttl > 0 ? Date.now() + ttl * 1000 : null;
+
+  return { nonce, expiresAt };
 }
 
-export function consumeNonce(address, nonce) {
-  const entry = getNonceEntry(address);
-  const key = address.toLowerCase();
+export async function consumeNonce(address, expectedNonce) {
+  await ensureRedis();
 
-  if (entry.expiresAt <= Date.now()) {
-    nonces.delete(key);
-    return false;
+  const key = nonceKey(address);
+
+  // Try GETDEL to do this atomically
+  let stored;
+  try {
+    stored = await redis.sendCommand(["GETDEL", key]);
+  } catch {
+    // fallback if GETDEL doesn't work
+    stored = await redis.get(key);
+    if (stored) await redis.del(key);
   }
 
-  if (entry.nonce !== nonce) return false;
+  if (!stored) return { ok: false, error: "No nonce issued for this address" };
+  if (stored !== expectedNonce) return { ok: false, error: "Nonce mismatch" };
 
-  nonces.delete(key);
-  return true;
-}
-
-export function startNonceCleanup() {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [k, v] of nonces.entries()) {
-      if (!v || v.expiresAt <= now) nonces.delete(k);
-    }
-  }, 60_000).unref();
+  return { ok: true };
 }

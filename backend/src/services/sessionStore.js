@@ -1,46 +1,46 @@
 import crypto from "crypto";
+import { redis, ensureRedis } from "./redis.js";
 
-const sessions = new Map();
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const SESSION_TTL_SECONDS = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 7);
 
-export function createSession({ address, chainId }) {
-  const sid = crypto.randomBytes(32).toString("hex");
-  const now = Date.now();
-
-  sessions.set(sid, {
-    address,
-    chainId,
-    createdAt: now,
-    expiresAt: now + SESSION_TTL_MS
-  });
-
-  return { sid, expiresAt: now + SESSION_TTL_MS };
+function sessionKey(sid) {
+  return `session:${sid}`;
 }
 
-export function getSession(sid) {
-  const session = sessions.get(sid);
-  if (!session) return null;
+export async function createSession({ address, chainId }) {
+  await ensureRedis();
 
-  if (session.expiresAt <= Date.now()) {
-    sessions.delete(sid);
+  const sid = crypto.randomBytes(32).toString("hex");
+  const createdAt = Date.now();
+
+  const payload = JSON.stringify({ address, chainId, createdAt });
+
+  await redis.set(sessionKey(sid), payload, { EX: SESSION_TTL_SECONDS });
+
+  const expiresAt = createdAt + SESSION_TTL_SECONDS * 1000;
+  console.log(Date.now());
+  console.log(expiresAt);
+  return { sid, expiresAt };
+}
+
+export async function deleteSession(sid) {
+  await ensureRedis();
+
+  await redis.del(sessionKey(sid));
+}
+
+export async function getSession(sid) {
+  await ensureRedis();
+
+  if (!sid) return null;
+  const raw = await redis.get(sessionKey(sid));
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // corrupted session, delete
+    await redis.del(sessionKey(sid));
     return null;
   }
-
-  return session;
-}
-
-export function deleteSession(sid) {
-  sessions.delete(sid);
-}
-
-export function cleanupSessions() {
-  const now = Date.now();
-  for (const [sid, session] of sessions) {
-    if (session.expiresAt <= now) sessions.delete(sid);
-  }
-}
-
-// optional, called once from server bootstrap
-export function startSessionCleanup() {
-  setInterval(cleanupSessions, 60_000).unref();
 }
