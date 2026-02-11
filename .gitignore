@@ -3,3 +3,7 @@ app.db-shm
 app.db-wal
 
 .env
+
+node_modules
+
+.DS_Store
