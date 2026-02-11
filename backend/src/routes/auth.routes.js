@@ -96,8 +96,6 @@ router.post("/verify", async (req, res) => {
       path: "/"
     });
 
-    console.log(sid)
-
     return res.json({ ok: true, address: address, chainId: chainId ?? null });
   } catch (err) {
     // This catches siwe.verify errors since it throws on failure

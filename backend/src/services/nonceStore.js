@@ -4,7 +4,7 @@ import { redis, ensureRedis } from "./redis.js";
 const NONCE_TTL_SECONDS = Number(process.env.NONCE_TTL_SECONDS || 300);
 
 function nonceKey(address) {
-  return `nonce:${address}`;
+  return `siwe-test:nonce:${address}`;
 }
 
 export async function issueNonce(address) {

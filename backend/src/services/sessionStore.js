@@ -4,7 +4,7 @@ import { redis, ensureRedis } from "./redis.js";
 const SESSION_TTL_SECONDS = Number(process.env.SESSION_TTL_SECONDS || 60 * 60 * 24 * 7);
 
 function sessionKey(sid) {
-  return `session:${sid}`;
+  return `siwe-test:session:${sid}`;
 }
 
 export async function createSession({ address, chainId }) {
@@ -18,8 +18,6 @@ export async function createSession({ address, chainId }) {
   await redis.set(sessionKey(sid), payload, { EX: SESSION_TTL_SECONDS });
 
   const expiresAt = createdAt + SESSION_TTL_SECONDS * 1000;
-  console.log(Date.now());
-  console.log(expiresAt);
   return { sid, expiresAt };
 }
 
